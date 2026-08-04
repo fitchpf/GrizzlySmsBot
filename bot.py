@@ -1,3 +1,19 @@
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+
+class PingHandler(BaseHTTPRequestHandler):
+def do_GET(self):
+self.send_response(200)
+self.end_headers()
+self.wfile.write(b"OK")
+
+def run_webserver():
+server = HTTPServer(('0.0.0.0', 10000), PingHandler)
+server.serve_forever()
+
+# Start the web server in a background thread
+threading.Thread(target=run_webserver, daemon=True).start()
+
 from __future__ import annotations
 
 import logging
