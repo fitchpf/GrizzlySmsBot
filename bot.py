@@ -1,15 +1,27 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from __future__ import annotations
+
+import logging
+import os
+import signal
 import threading
 import time
+from dataclasses import dataclass
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
+import requests
+from requests.adapters import HTTPAdapter
+
+
+# ---------- Web server for keep-alive pings ----------
 class PingHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"OK")
-    
+
     def log_message(self, format, *args):
         pass  # Keep logs clean
+
 
 def run_webserver():
     try:
@@ -19,21 +31,11 @@ def run_webserver():
     except Exception as e:
         print(f"⚠️ Web server error: {e}")
 
+
 # Start the web server in a background thread
 threading.Thread(target=run_webserver, daemon=True).start()
 
-from __future__ import annotations
-
-import logging
-import os
-import signal
-import threading
-from dataclasses import dataclass
-
-import requests
-from requests.adapters import HTTPAdapter
-
-
+# ---------- Original bot code ----------
 LOG = logging.getLogger("grizzlysms")
 API_URL = "https://api.grizzlysms.com/stubs/handler_api.php"
 
