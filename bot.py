@@ -6,36 +6,11 @@ import signal
 import threading
 import time
 from dataclasses import dataclass
-from http.server import HTTPServer, BaseHTTPRequestHandler
 
 import requests
 from requests.adapters import HTTPAdapter
 
 
-# ---------- Web server for keep-alive pings ----------
-class PingHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"OK")
-
-    def log_message(self, format, *args):
-        pass  # Keep logs clean
-
-
-def run_webserver():
-    try:
-        server = HTTPServer(('0.0.0.0', 10000), PingHandler)
-        print("✅ Web server running on port 10000")
-        server.serve_forever()
-    except Exception as e:
-        print(f"⚠️ Web server error: {e}")
-
-
-# Start the web server in a background thread
-threading.Thread(target=run_webserver, daemon=True).start()
-
-# ---------- Original bot code ----------
 LOG = logging.getLogger("grizzlysms")
 API_URL = "https://api.grizzlysms.com/stubs/handler_api.php"
 
@@ -317,11 +292,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    # Infinite loop to keep the bot running forever
-    while True:
-        try:
-            raise SystemExit(main())
-        except Exception as e:
-            print(f"Error in main loop: {e}")
-        print("🔄 Bot finished a check cycle. Restarting in 10 seconds...")
-        time.sleep(10)
+    raise SystemExit(main())
