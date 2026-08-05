@@ -4,7 +4,7 @@ Small Docker bot that repeatedly calls the Grizzly SMS `getNumber` endpoint unti
 it gets a phone number. When a number is acquired, the bot sends one notification
 to an ntfy topic.
 
-## How It Works
+## How It Works 
 
 The bot starts several worker threads. Each worker calls the Grizzly SMS API with
 the configured service, country, max price, and optional provider IDs.
