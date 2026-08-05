@@ -1,0 +1,28 @@
+name: Check Turkish Number
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # runs every 5 minutes
+  workflow_dispatch:        # allows manual trigger
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python bot.py
+        env:
+          GRIZZLY_API_KEY: ${{ secrets.GRIZZLY_API_KEY }}
+          SERVICE: ${{ secrets.SERVICE }}
+          COUNTRY: ${{ secrets.COUNTRY }}
+          MAX_PRICE: ${{ secrets.MAX_PRICE }}
+          PROVIDER_IDS: ${{ secrets.PROVIDER_IDS }}
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+          THREADS: ${{ secrets.THREADS }}
+          MAX_REQUESTSTS_PER_SECOND: ${{ secrets.MAX_REQUESTSTS_PER_SECOND }}
+          REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
+          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
