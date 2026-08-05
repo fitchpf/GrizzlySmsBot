@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # ← This fixes the "fetching" loop
+          fetch-depth: 1
       
       - uses: actions/setup-python@v5
         with:
@@ -30,6 +30,6 @@ jobs:
           PROVIDER_IDS: ${{ secrets.PROVIDER_IDS }}
           NTFY_URL: ${{ secrets.NTFY_URL }}
           THREADS: ${{ secrets.THREADS }}
-          MAX_REQUESTSTS_PER_SECOND: ${{ secrets.MAX_REQUESTSTS_PER_SECOND }}
+          MAX_REQUESTS_PER_SECOND: ${{ secrets.MAX_REQUESTS_PER_SECOND }}   # ← Corrected spelling
           REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
           LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
