@@ -22,7 +22,7 @@ jobs:
         id: cache-used-numbers
         with:
           path: used_numbers.json
-          key: used-numbers-v5
+          key: used-numbers-v6
       
       - name: Seed cache with repo file if cache miss
         if: steps.cache-used-numbers.outputs.cache-hit != 'true'
@@ -53,3 +53,28 @@ jobs:
           MAX_REQUESTS_PER_SECOND: ${{ secrets.MAX_REQUESTS_PER_SECOND }}
           REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
           LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+      
+      - name: Debug cache contents (after bot run)
+        run: |
+          if [ -f used_numbers.json ]; then
+            echo "Cache file after bot run:"
+            cat used_numbers.json
+          else
+            echo "Cache file not found after bot run"
+          fi
+      
+      - name: Save updated used numbers cache
+        uses: actions/cache@v4
+        with:
+          path: used_numbers.json
+          key: used-numbers-v6
+      
+      - name: Commit updated used numbers to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add used_numbers.json
+          git diff --staged --quiet || git commit -m "Auto-update used_numbers.json [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
