@@ -1,80 +1,60 @@
-name: Check Turkish Number
-
-on:
-  schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: true
-
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      
-      - name: Restore used numbers cache
-        uses: actions/cache@v4
-        id: cache-used-numbers
-        with:
-          path: used_numbers.json
-          key: used-numbers-v7
-      
-      - name: Seed cache with repo file if cache miss
-        if: steps.cache-used-numbers.outputs.cache-hit != 'true'
-        run: |
-          if [ -f used_numbers.json ]; then
-            echo "Using seed file from repository"
-          else
-            echo '{"numbers": []}' > used_numbers.json
-          fi
-      
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      
-      - name: Run bot
-        run: python bot.py
-        env:
-          GRIZZLY_API_KEY: ${{ secrets.GRIZZLY_API_KEY }}
-          SERVICE: ${{ secrets.SERVICE }}
-          COUNTRY: ${{ secrets.COUNTRY }}
-          MAX_PRICE: ${{ secrets.MAX_PRICE }}
-          PROVIDER_IDS: ${{ secrets.PROVIDER_IDS }}
-          NTFY_URL: ${{ secrets.NTFY_URL }}
-          THREADS: ${{ secrets.THREADS }}
-          MAX_REQUESTS_PER_SECOND: ${{ secrets.MAX_REQUESTS_PER_SECOND }}
-          REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
-          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
-      
-      - name: Debug cache contents (after bot run)
-        run: |
-          if [ -f used_numbers.json ]; then
-            echo "Cache file after bot run:"
-            cat used_numbers.json
-          else
-            echo "Cache file not found after bot run"
-          fi
-      
-      - name: Save updated used numbers cache
-        uses: actions/cache@v4
-        with:
-          path: used_numbers.json
-          key: used-numbers-v7
-      
-      - name: Commit updated used numbers to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add used_numbers.json
-          git diff --staged --quiet || git commit -m "Auto-update used_numbers.json [skip ci]"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+Run python bot.py
+***0***6-08-09 ***1:00:18,71*** | *** | MainThread | Loaded 1*** used phone numbers from cache
+***0***6-08-09 ***1:00:18,71*** | *** | MainThread | startup service=*** country=*** maxPrice=*** providerIds=*** workers=*** limit=***.0/s
+***0***6-08-09 ***1:00:18,71*** | *** | MainThread | ntfy test: SKIPPED (startup notifications disabled)
+***0***6-08-09 ***1:01:08,847 | *** | poll-*** | still polling requests=***0 no_numbers=***0 acquired=0
+***0***6-08-09 ***1:01:58,91*** | *** | poll-1 | still polling requests=***00 no_numbers=***00 acquired=0
+***0***6-08-09 ***1:0***:48,949 | *** | poll-7 | still polling requests=***00 no_numbers=***00 acquired=0
+***0***6-08-09 ***1:0***:***8,640 | *** | poll-6 | still polling requests=400 no_numbers=400 acquired=0
+***0***6-08-09 ***1:0***:4***,491 | WARNING | poll-*** | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:04:***0,6*** | *** | poll-1 | still polling requests=500 no_numbers=499 acquired=0
+***0***6-08-09 ***1:05:***0,467 | *** | poll-6 | still polling requests=600 no_numbers=599 acquired=0
+***0***6-08-09 ***1:06:***,7***1 | *** | poll-1 | still polling requests=700 no_numbers=699 acquired=0
+***0***6-08-09 ***1:07:00,409 | *** | poll-*** | still polling requests=800 no_numbers=799 acquired=0
+***0***6-08-09 ***1:07:50,*** | *** | poll-6 | still polling requests=900 no_numbers=899 acquired=0
+***0***6-08-09 ***1:08:40,714 | *** | poll-1 | still polling requests=***00 no_numbers=999 acquired=0
+***0***6-08-09 ***1:09:***0,8***6 | *** | poll-8 | still polling requests=1***0 no_numbers=***99 acquired=0
+***0***6-08-09 ***1:***:18,***90 | WARNING | poll-1 | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:***:***,589 | *** | poll-9 | still polling requests=1***00 no_numbers=1198 acquired=0
+***0***6-08-09 ***1:11:1***,145 | *** | poll-11 | still polling requests=1***00 no_numbers=1***98 acquired=0
+***0***6-08-09 ***1:1***:0***,***95 | *** | poll-1*** | still polling requests=1400 no_numbers=1***98 acquired=0
+***0***6-08-09 ***1:1***:54,189 | *** | poll-4 | still polling requests=***00 no_numbers=1498 acquired=0
+***0***6-08-09 ***1:1***:4***,55*** | *** | poll-*** | still polling requests=1600 no_numbers=***98 acquired=0
+***0***6-08-09 ***1:14:11,***07 | WARNING | poll-*** | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:14:***4,***09 | *** | poll-1 | still polling requests=1700 no_numbers=1697 acquired=0
+***0***6-08-09 ***1:***:***4,*** | *** | poll-9 | still polling requests=1800 no_numbers=1797 acquired=0
+***0***6-08-09 ***1:16:14,4***9 | *** | poll-5 | still polling requests=1900 no_numbers=1897 acquired=0
+***0***6-08-09 ***1:16:46,444 | WARNING | poll-*** | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:17:06,068 | *** | poll-14 | still polling requests=***000 no_numbers=1996 acquired=0
+***0***6-08-09 ***1:17:56,111 | *** | poll-5 | still polling requests=***0 no_numbers=***096 acquired=0
+***0***6-08-09 ***1:18:46,18*** | *** | poll-9 | still polling requests=***00 no_numbers=***196 acquired=0
+***0***6-08-09 ***1:19:***,71*** | WARNING | poll-4 | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:19:***,***19 | WARNING | poll-6 | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:19:***7,989 | *** | poll-8 | still polling requests=***00 no_numbers=***94 acquired=0
+***0***6-08-09 ***1:***0:***8,***64 | *** | poll-7 | still polling requests=***400 no_numbers=***94 acquired=0
+***0***6-08-09 ***1:***1:18,***45 | *** | poll-8 | still polling requests=***500 no_numbers=***494 acquired=0
+***0***6-08-09 ***1:***:00,4***9 | WARNING | poll-*** | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:***:***,067 | *** | poll-6 | still polling requests=***600 no_numbers=***59*** acquired=0
+***0***6-08-09 ***1:***:00,0***9 | *** | poll-6 | still polling requests=***700 no_numbers=***69*** acquired=0
+***0***6-08-09 ***1:***:49,686 | *** | poll-14 | still polling requests=***800 no_numbers=***79*** acquired=0
+***0***6-08-09 ***1:***4:***6,***7 | WARNING | poll-11 | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:***4:4***,006 | *** | poll-14 | still polling requests=***900 no_numbers=***89*** acquired=0
+***0***6-08-09 ***1:***5:***1,706 | *** | poll-*** | still polling requests=***000 no_numbers=***99*** acquired=0
+***0***6-08-09 ***1:***6:***1,674 | *** | poll-11 | still polling requests=***0 no_numbers=***09*** acquired=0
+***0***6-08-09 ***1:***7:14,***5 | *** | poll-*** | still polling requests=***00 no_numbers=***19*** acquired=0
+***0***6-08-09 ***1:***8:01,999 | *** | poll-1 | still polling requests=***00 no_numbers=***9*** acquired=0
+***0***6-08-09 ***1:***8:5***,0***7 | *** | poll-1*** | still polling requests=***400 no_numbers=***9*** acquired=0
+***0***6-08-09 ***1:***9:4***,11*** | *** | poll-6 | still polling requests=***500 no_numbers=***49*** acquired=0
+***0***6-08-09 ***1:***0:***1,790 | *** | poll-*** | still polling requests=***600 no_numbers=***59*** acquired=0
+***0***6-08-09 ***1:***1:06,161 | WARNING | poll-5 | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:***1:***,811 | *** | poll-*** | still polling requests=***700 no_numbers=***691 acquired=0
+***0***6-08-09 ***1:***:1***,88*** | *** | poll-6 | still polling requests=***800 no_numbers=***791 acquired=0
+***0***6-08-09 ***1:***:0***,914 | *** | poll-6 | still polling requests=***900 no_numbers=***891 acquired=0
+***0***6-08-09 ***1:***:5***,814 | *** | poll-1 | still polling requests=4000 no_numbers=***991 acquired=0
+***0***6-08-09 ***1:***4:4***,61*** | *** | poll-*** | still polling requests=4***0 no_numbers=4091 acquired=0
+***0***6-08-09 ***1:***5:***,941 | *** | poll-7 | still polling requests=4***00 no_numbers=4191 acquired=0
+***0***6-08-09 ***1:***6:17,458 | WARNING | poll-9 | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:***6:17,988 | WARNING | poll-*** | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:***6:***1,191 | WARNING | poll-9 | Grizzly HTTP 5***5: pause ***.0s
+***0***6-08-09 ***1:***6:***7,900 | *** | poll-1 | still polling requests=4***00 no_numbers=4***88 acquired=0
+***0***6-08-09 ***1:***7:17,896 | *** | poll-4 | still polling requests=4400 no_numbers=4***88 acquired=0
