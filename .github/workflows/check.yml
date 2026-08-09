@@ -24,6 +24,15 @@ jobs:
           path: used_numbers.json
           key: used-numbers-v1
       
+      - name: Seed cache with repo file if cache miss
+        if: steps.cache-used-numbers.outputs.cache-hit != 'true'
+        run: |
+          if [ -f used_numbers.json ]; then
+            echo "Using seed file from repository"
+          else
+            echo '{"numbers": []}' > used_numbers.json
+          fi
+      
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
