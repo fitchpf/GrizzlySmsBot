@@ -22,7 +22,7 @@ jobs:
         id: cache-used-numbers
         with:
           path: used_numbers.json
-          key: used-numbers-v1
+          key: used-numbers-v2
       
       - name: Seed cache with repo file if cache miss
         if: steps.cache-used-numbers.outputs.cache-hit != 'true'
