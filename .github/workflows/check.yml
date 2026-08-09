@@ -22,7 +22,7 @@ jobs:
         id: cache-used-numbers
         with:
           path: used_numbers.json
-          key: used-numbers-v6
+          key: used-numbers-v7
       
       - name: Seed cache with repo file if cache miss
         if: steps.cache-used-numbers.outputs.cache-hit != 'true'
@@ -67,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: used_numbers.json
-          key: used-numbers-v6
+          key: used-numbers-v7
       
       - name: Commit updated used numbers to repo
         run: |
