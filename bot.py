@@ -256,11 +256,14 @@ class Bot:
         session = new_session()
         try:
             while self.limiter.wait(self.stop):
-                self.poll_once(session, worker_id)
+                rented = self.poll_once(session, worker_id)
+                if rented:
+                    LOG.info("Worker %s: cooldown %ds after rental", worker_id, CANCEL_WAIT_SECONDS)
+                    self.stop.wait(CANCEL_WAIT_SECONDS)
         finally:
             session.close()
 
-    def poll_once(self, session: requests.Session, worker_id: int) -> None:
+    def poll_once(self, session: requests.Session, worker_id: int) -> bool:
         try:
             response = session.get(
                 self.config.api_url,
@@ -270,19 +273,26 @@ class Bot:
         except requests.RequestException as error:
             LOG.warning("Grizzly network error: %s", type(error).__name__)
             self.stop.wait(1)
-            return
+            return False
 
         if response.status_code != 200:
             self.record_request()
             delay = 2.0
             self.limiter.pause(delay)
             LOG.warning("Grizzly HTTP %s: pause %.1fs", response.status_code, delay)
-            return
+            return False
 
         body = response.text.strip()
+
         if body == "NO_NUMBERS":
             self.record_request(no_number=True)
-            return
+            return False
+
+        if body == "NO_BALANCE":
+            self.record_request()
+            LOG.warning("NO_BALANCE: Waiting %ds before retrying", CANCEL_WAIT_SECONDS)
+            time.sleep(CANCEL_WAIT_SECONDS)
+            return False
 
         self.record_request()
 
@@ -290,10 +300,11 @@ class Bot:
         if not number:
             self.limiter.pause(2)
             LOG.warning("Grizzly response: %s", body[:100])
-            return
+            return False
 
         activation_id, phone_number = number
         self.notify_purchase(activation_id, phone_number)
+        return True  # Rental occurred
 
     def run(self) -> None:
         cfg = self.config
