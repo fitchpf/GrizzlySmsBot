@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import signal
@@ -12,6 +13,30 @@ from requests.adapters import HTTPAdapter
 
 LOG = logging.getLogger("grizzlysms")
 API_URL = "https://api.grizzlysms.com/stubs/handler_api.php"
+
+# File used for persisting used phone numbers across runs
+USED_NUMBERS_FILE = "used_numbers.json"
+
+
+def load_used_numbers() -> set[str]:
+    """Load previously used phone numbers from cache file."""
+    if os.path.exists(USED_NUMBERS_FILE):
+        try:
+            with open(USED_NUMBERS_FILE, "r") as f:
+                data = json.load(f)
+                return set(data.get("numbers", []))
+        except Exception as e:
+            LOG.warning("Failed to load used numbers: %s", e)
+    return set()
+
+
+def save_used_numbers(numbers: set[str]) -> None:
+    """Save used phone numbers to cache file."""
+    try:
+        with open(USED_NUMBERS_FILE, "w") as f:
+            json.dump({"numbers": list(numbers)}, f)
+    except Exception as e:
+        LOG.warning("Failed to save used numbers: %s", e)
 
 
 def env_required(name: str) -> str:
@@ -133,6 +158,9 @@ class Bot:
         self.status_lock = threading.Lock()
         self.total_requests = 0
         self.no_numbers = 0
+        # Load previously used numbers
+        self.used_numbers = load_used_numbers()
+        LOG.info("Loaded %d used phone numbers from cache", len(self.used_numbers))
 
     def send_notification(self, title: str, message: str, urgent: bool = False) -> bool:
         try:
@@ -176,9 +204,19 @@ class Bot:
             )
 
     def notify_purchase(self, activation_id: str, phone_number: str) -> None:
+        # Check if this phone number has been used before
+        with self.seen_lock:
+            if phone_number in self.used_numbers:
+                LOG.info("Skipping duplicate phone number: %s", phone_number)
+                return
+            # Mark as used now
+            self.used_numbers.add(phone_number)
+            # Save to file
+            save_used_numbers(self.used_numbers)
+
         message = f"Number: {phone_number}\nActivation: {activation_id}"
         if self.send_notification("GRIZZLY NUMBER ACQUIRED", message, urgent=True):
-            LOG.info("notification sent activation=%s", activation_id)
+            LOG.info("notification sent activation=%s number=%s (new)", activation_id, phone_number)
         else:
             LOG.warning("notification failed activation=%s", activation_id)
 
@@ -246,14 +284,7 @@ class Bot:
             cfg.workers,
             cfg.rate,
         )
-        
-        # Startup notification disabled to avoid spam on every GitHub Actions run.
-        # The bot will still notify when a number is actually acquired.
-        # result = self.send_notification(
-        #     "Grizzly SMS startup test",
-        #     f"Bot active: {cfg.workers} workers, limit {cfg.rate:g} req/s.",
-        # )
-        # LOG.info("ntfy test: %s", "OK" if result else "FAILED")
+        # Startup notification disabled to avoid spam
         LOG.info("ntfy test: SKIPPED (startup notifications disabled)")
 
         threads = [
