@@ -14,12 +14,10 @@ from requests.adapters import HTTPAdapter
 LOG = logging.getLogger("grizzlysms")
 API_URL = "https://api.grizzlysms.com/stubs/handler_api.php"
 
-# File used for persisting used phone numbers across runs
 USED_NUMBERS_FILE = "used_numbers.json"
 
 
 def load_used_numbers() -> set[str]:
-    """Load previously used phone numbers from cache file."""
     if os.path.exists(USED_NUMBERS_FILE):
         try:
             with open(USED_NUMBERS_FILE, "r") as f:
@@ -31,7 +29,6 @@ def load_used_numbers() -> set[str]:
 
 
 def save_used_numbers(numbers: set[str]) -> None:
-    """Save used phone numbers to cache file."""
     try:
         with open(USED_NUMBERS_FILE, "w") as f:
             json.dump({"numbers": list(numbers)}, f)
@@ -158,7 +155,6 @@ class Bot:
         self.status_lock = threading.Lock()
         self.total_requests = 0
         self.no_numbers = 0
-        # Load previously used numbers
         self.used_numbers = load_used_numbers()
         LOG.info("Loaded %d used phone numbers from cache", len(self.used_numbers))
 
@@ -203,22 +199,30 @@ class Bot:
                 acquired,
             )
 
-    def notify_purchase(self, activation_id: str, phone_number: str, is_duplicate: bool = False) -> None:
-        # Mark as used
+    def notify_purchase(self, activation_id: str, phone_number: str) -> None:
+        # Check if this number is a duplicate
+        is_duplicate = phone_number in self.used_numbers
+        
+        # Add to used numbers
         with self.seen_lock:
             self.used_numbers.add(phone_number)
             save_used_numbers(self.used_numbers)
 
+        # Send notification
         if is_duplicate:
             title = "⚠️ REPEAT NUMBER RENTED"
             message = f"[REPEAT] Number: {phone_number}\nActivation: {activation_id}\nThis number was rented before!"
+            LOG.warning("DUPLICATE RENTED: %s (activation: %s)", phone_number, activation_id)
         else:
             title = "GRIZZLY NUMBER ACQUIRED"
             message = f"Number: {phone_number}\nActivation: {activation_id}"
-        
+            LOG.info("NEW NUMBER RENTED: %s (activation: %s)", phone_number, activation_id)
+
+        # Try to send notification
         if self.send_notification(title, message, urgent=True):
-            LOG.info("notification sent activation=%s number=%s (new)", activation_id, phone_number)
+            LOG.info("notification sent for %s", phone_number)
         else:
+            # If notification fails, log it loudly so it's not missed
             LOG.error("NOTIFICATION FAILED! Number rented but not alerted: %s", phone_number)
             print(f"!!!!!!!!!! NUMBER RENTED: {phone_number} - ACTIVATION: {activation_id} !!!!!!!!!!")
 
@@ -263,32 +267,12 @@ class Bot:
             return
 
         activation_id, phone_number = number
-
-        # Check if this is a duplicate BEFORE marking as seen
-        # Note: The number is already rented at this point, but we'll label it as REPEAT in the notification
-        is_duplicate = False
-        with self.seen_lock:
-            if phone_number in self.used_numbers:
-                is_duplicate = True
-                LOG.warning("⚠️ DUPLICATE RENTED! Number %s was rented before (activation: %s). You will be charged.", phone_number, activation_id)
-
-        if not self.mark_seen(activation_id):
-            return
-
-        LOG.info(
-            "number acquired worker=%s activation=%s number=%s%s",
-            worker_id,
-            activation_id,
-            phone_number,
-            " [DUPLICATE]" if is_duplicate else "",
-        )
-        self.notify_purchase(activation_id, phone_number, is_duplicate)
+        self.notify_purchase(activation_id, phone_number)
 
     def run(self) -> None:
         cfg = self.config
         LOG.info(
-            "startup service=%s country=%s maxPrice=%s providerIds=%s "
-            "workers=%s limit=%.1f/s",
+            "startup service=%s country=%s maxPrice=%s providerIds=%s workers=%s limit=%.1f/s",
             cfg.service,
             cfg.country,
             cfg.max_price,
@@ -296,7 +280,6 @@ class Bot:
             cfg.workers,
             cfg.rate,
         )
-        # Startup notification disabled to avoid spam
         LOG.info("ntfy test: SKIPPED (startup notifications disabled)")
 
         threads = [
