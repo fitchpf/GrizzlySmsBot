@@ -17,6 +17,13 @@ jobs:
         with:
           fetch-depth: 1
       
+      - name: Restore used numbers cache
+        uses: actions/cache@v4
+        id: cache-used-numbers
+        with:
+          path: used_numbers.json
+          key: used-numbers-v1
+      
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
