@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import requests
 from requests.adapters import HTTPAdapter
 
-
 LOG = logging.getLogger("grizzlysms")
 API_URL = "https://api.grizzlysms.com/stubs/handler_api.php"
 
@@ -247,11 +246,15 @@ class Bot:
             cfg.workers,
             cfg.rate,
         )
-        result = self.send_notification(
-            "Grizzly SMS startup test",
-            f"Bot active: {cfg.workers} workers, limit {cfg.rate:g} req/s.",
-        )
-        LOG.info("ntfy test: %s", "OK" if result else "FAILED")
+        
+        # Startup notification disabled to avoid spam on every GitHub Actions run.
+        # The bot will still notify when a number is actually acquired.
+        # result = self.send_notification(
+        #     "Grizzly SMS startup test",
+        #     f"Bot active: {cfg.workers} workers, limit {cfg.rate:g} req/s.",
+        # )
+        # LOG.info("ntfy test: %s", "OK" if result else "FAILED")
+        LOG.info("ntfy test: SKIPPED (startup notifications disabled)")
 
         threads = [
             threading.Thread(target=self.poll_worker, args=(worker,), name=f"poll-{worker}")
