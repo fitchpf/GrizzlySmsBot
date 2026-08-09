@@ -203,20 +203,23 @@ class Bot:
                 acquired,
             )
 
-    def notify_purchase(self, activation_id: str, phone_number: str) -> None:
+    def notify_purchase(self, activation_id: str, phone_number: str, is_duplicate: bool = False) -> None:
         # Mark as used
         with self.seen_lock:
             self.used_numbers.add(phone_number)
             save_used_numbers(self.used_numbers)
 
-        message = f"Number: {phone_number}\nActivation: {activation_id}"
+        if is_duplicate:
+            title = "⚠️ REPEAT NUMBER RENTED"
+            message = f"[REPEAT] Number: {phone_number}\nActivation: {activation_id}\nThis number was rented before!"
+        else:
+            title = "GRIZZLY NUMBER ACQUIRED"
+            message = f"Number: {phone_number}\nActivation: {activation_id}"
         
-        # Try to send notification
-        if self.send_notification("GRIZZLY NUMBER ACQUIRED", message, urgent=True):
+        if self.send_notification(title, message, urgent=True):
             LOG.info("notification sent activation=%s number=%s (new)", activation_id, phone_number)
         else:
             LOG.error("NOTIFICATION FAILED! Number rented but not alerted: %s", phone_number)
-            # Also log the number to the GitHub Actions log so you can see it even if notification fails
             print(f"!!!!!!!!!! NUMBER RENTED: {phone_number} - ACTIVATION: {activation_id} !!!!!!!!!!")
 
     def poll_worker(self, worker_id: int) -> None:
@@ -261,23 +264,25 @@ class Bot:
 
         activation_id, phone_number = number
 
-        # ---- DUPLICATE CHECK BEFORE RENTAL ----
+        # Check if this is a duplicate BEFORE marking as seen
+        # Note: The number is already rented at this point, but we'll label it as REPEAT in the notification
+        is_duplicate = False
         with self.seen_lock:
             if phone_number in self.used_numbers:
-                LOG.info("Skipping duplicate phone number (will not rent): %s", phone_number)
-                return
-        # ----------------------------------------
+                is_duplicate = True
+                LOG.warning("⚠️ DUPLICATE RENTED! Number %s was rented before (activation: %s). You will be charged.", phone_number, activation_id)
 
         if not self.mark_seen(activation_id):
             return
 
         LOG.info(
-            "number acquired worker=%s activation=%s number=%s",
+            "number acquired worker=%s activation=%s number=%s%s",
             worker_id,
             activation_id,
             phone_number,
+            " [DUPLICATE]" if is_duplicate else "",
         )
-        self.notify_purchase(activation_id, phone_number)
+        self.notify_purchase(activation_id, phone_number, is_duplicate)
 
     def run(self) -> None:
         cfg = self.config
