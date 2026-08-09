@@ -210,10 +210,14 @@ class Bot:
             save_used_numbers(self.used_numbers)
 
         message = f"Number: {phone_number}\nActivation: {activation_id}"
+        
+        # Try to send notification
         if self.send_notification("GRIZZLY NUMBER ACQUIRED", message, urgent=True):
             LOG.info("notification sent activation=%s number=%s (new)", activation_id, phone_number)
         else:
-            LOG.warning("notification failed activation=%s", activation_id)
+            LOG.error("NOTIFICATION FAILED! Number rented but not alerted: %s", phone_number)
+            # Also log the number to the GitHub Actions log so you can see it even if notification fails
+            print(f"!!!!!!!!!! NUMBER RENTED: {phone_number} - ACTIVATION: {activation_id} !!!!!!!!!!")
 
     def poll_worker(self, worker_id: int) -> None:
         session = new_session()
@@ -257,11 +261,12 @@ class Bot:
 
         activation_id, phone_number = number
 
-        # Check if this phone number has been used before
+        # ---- DUPLICATE CHECK BEFORE RENTAL ----
         with self.seen_lock:
             if phone_number in self.used_numbers:
                 LOG.info("Skipping duplicate phone number (will not rent): %s", phone_number)
                 return
+        # ----------------------------------------
 
         if not self.mark_seen(activation_id):
             return
