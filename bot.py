@@ -15,6 +15,7 @@ LOG = logging.getLogger("grizzlysms")
 API_URL = "https://api.grizzlysms.com/stubs/handler_api.php"
 
 USED_NUMBERS_FILE = "used_numbers.json"
+CANCEL_WAIT_SECONDS = 125  # 2 minutes and 5 seconds
 
 
 def load_used_numbers() -> set[str]:
@@ -171,9 +172,29 @@ class Bot:
                     },
                     timeout=self.config.timeout,
                 )
-            return response.ok
+                if not response.ok:
+                    LOG.error("ntfy HTTP error: %s - %s", response.status_code, response.text[:100])
+                return response.ok
         except requests.RequestException as error:
-            LOG.warning("ntfy error: %s", type(error).__name__)
+            LOG.error("ntfy request exception: %s", error)
+            return False
+
+    def cancel_activation(self, activation_id: str) -> bool:
+        """Cancel an activation by its ID."""
+        try:
+            cancel_url = (
+                f"{API_URL}?api_key={self.config.api_key}"
+                f"&action=setStatus&status=-1&id={activation_id}"
+            )
+            response = requests.get(cancel_url, timeout=self.config.timeout)
+            if response.status_code == 200:
+                LOG.info("Cancellation request sent for activation %s. Response: %s", activation_id, response.text.strip())
+                return True
+            else:
+                LOG.error("Cancellation failed for activation %s. Status: %s", activation_id, response.status_code)
+                return False
+        except requests.RequestException as error:
+            LOG.error("Cancellation request error for %s: %s", activation_id, error)
             return False
 
     def mark_seen(self, activation_id: str) -> bool:
@@ -203,28 +224,33 @@ class Bot:
         # Check if this number is a duplicate
         is_duplicate = phone_number in self.used_numbers
         
-        # Add to used numbers
+        # Add to used numbers (always, so we track it)
         with self.seen_lock:
             self.used_numbers.add(phone_number)
             save_used_numbers(self.used_numbers)
 
-        # Send notification
-        if is_duplicate:
-            title = "⚠️ REPEAT NUMBER RENTED"
-            message = f"[REPEAT] Number: {phone_number}\nActivation: {activation_id}\nThis number was rented before!"
-            LOG.warning("DUPLICATE RENTED: %s (activation: %s)", phone_number, activation_id)
-        else:
+        if not is_duplicate:
+            # NEW NUMBER – send notification
             title = "GRIZZLY NUMBER ACQUIRED"
             message = f"Number: {phone_number}\nActivation: {activation_id}"
-            LOG.info("NEW NUMBER RENTED: %s (activation: %s)", phone_number, activation_id)
+            if self.send_notification(title, message, urgent=True):
+                LOG.info("notification sent for %s", phone_number)
+            else:
+                LOG.error("NOTIFICATION FAILED! Number rented but not alerted: %s", phone_number)
+                print(f"!!!!!!!!!! NUMBER RENTED: {phone_number} - ACTIVATION: {activation_id} !!!!!!!!!!")
+            return
 
-        # Try to send notification
-        if self.send_notification(title, message, urgent=True):
-            LOG.info("notification sent for %s", phone_number)
-        else:
-            # If notification fails, log it loudly so it's not missed
-            LOG.error("NOTIFICATION FAILED! Number rented but not alerted: %s", phone_number)
-            print(f"!!!!!!!!!! NUMBER RENTED: {phone_number} - ACTIVATION: {activation_id} !!!!!!!!!!")
+        # --- DUPLICATE HANDLING ---
+        LOG.warning("DUPLICATE RENTED: %s (activation: %s). Waiting %ds then canceling.", phone_number, activation_id, CANCEL_WAIT_SECONDS)
+        
+        # Wait for 2 minutes and 5 seconds
+        time.sleep(CANCEL_WAIT_SECONDS)
+        
+        # Cancel the activation
+        self.cancel_activation(activation_id)
+        
+        # Log the cancellation for your manual check
+        print(f"!!!!!!!!!! DUPLICATE CANCELED: {phone_number} - ACTIVATION: {activation_id} !!!!!!!!!!")
 
     def poll_worker(self, worker_id: int) -> None:
         session = new_session()
