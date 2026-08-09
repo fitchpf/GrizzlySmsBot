@@ -204,14 +204,9 @@ class Bot:
             )
 
     def notify_purchase(self, activation_id: str, phone_number: str) -> None:
-        # Check if this phone number has been used before
+        # Mark as used
         with self.seen_lock:
-            if phone_number in self.used_numbers:
-                LOG.info("Skipping duplicate phone number: %s", phone_number)
-                return
-            # Mark as used now
             self.used_numbers.add(phone_number)
-            # Save to file
             save_used_numbers(self.used_numbers)
 
         message = f"Number: {phone_number}\nActivation: {activation_id}"
@@ -261,6 +256,13 @@ class Bot:
             return
 
         activation_id, phone_number = number
+
+        # Check if this phone number has been used before
+        with self.seen_lock:
+            if phone_number in self.used_numbers:
+                LOG.info("Skipping duplicate phone number (will not rent): %s", phone_number)
+                return
+
         if not self.mark_seen(activation_id):
             return
 
