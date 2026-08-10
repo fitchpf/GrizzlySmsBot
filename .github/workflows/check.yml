@@ -53,6 +53,7 @@ jobs:
           MAX_REQUESTS_PER_SECOND: ${{ secrets.MAX_REQUESTS_PER_SECOND }}
           REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
           LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+          CANCEL_WAIT_SECONDS: ${{ vars.CANCEL_WAIT_SECONDS }}
 
       - name: Fetch and analyze prices
         run: python fetch_prices.py
