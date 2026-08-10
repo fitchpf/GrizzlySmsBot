@@ -46,13 +46,13 @@ jobs:
           GRIZZLY_API_KEY: ${{ secrets.GRIZZLY_API_KEY }}
           SERVICE: ${{ secrets.SERVICE }}
           COUNTRY: ${{ secrets.COUNTRY }}
-          MAX_PRICE: ${{ secrets.MAX_PRICE }}
-          PROVIDER_IDS: ${{ secrets.PROVIDER_IDS }}
+          MAX_PRICE: ${{ vars.MAX_PRICE }}
+          PROVIDER_IDS: ${{ vars.PROVIDER_IDS }}
           NTFY_URL: ${{ secrets.NTFY_URL }}
-          THREADS: ${{ secrets.THREADS }}
-          MAX_REQUESTS_PER_SECOND: ${{ secrets.MAX_REQUESTS_PER_SECOND }}
-          REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
-          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+          THREADS: ${{ vars.THREADS }}
+          MAX_REQUESTS_PER_SECOND: ${{ vars.MAX_REQUESTS_PER_SECOND }}
+          REQUEST_TIMEOUT_SECONDS: ${{ vars.REQUEST_TIMEOUT_SECONDS }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
           CANCEL_WAIT_SECONDS: ${{ vars.CANCEL_WAIT_SECONDS }}
 
       - name: Fetch and analyze prices
