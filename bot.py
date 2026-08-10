@@ -15,7 +15,9 @@ LOG = logging.getLogger("grizzlysms")
 API_URL = "https://api.grizzlysms.com/stubs/handler_api.php"
 
 USED_NUMBERS_FILE = "used_numbers.json"
-CANCEL_WAIT_SECONDS = 125  # 2 minutes and 5 seconds
+import os
+
+CANCEL_WAIT_SECONDS = int(os.getenv("CANCEL_WAIT_SECONDS", "140"))
 
 
 def load_used_numbers() -> set[str]:
