@@ -54,6 +54,11 @@ jobs:
           REQUEST_TIMEOUT_SECONDS: ${{ secrets.REQUEST_TIMEOUT_SECONDS }}
           LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
 
+      - name: Fetch and analyze prices
+        run: python fetch_prices.py
+        env:
+          GRIZZLY_API_KEY: ${{ secrets.GRIZZLY_API_KEY }}
+
       - name: Debug cache contents (after bot run)
         run: |
           if [ -f used_numbers.json ]; then
